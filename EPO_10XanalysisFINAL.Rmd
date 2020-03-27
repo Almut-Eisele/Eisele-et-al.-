@@ -89,9 +89,9 @@ SlamHSCs <- generateSeuratObject()
 
 #### Step 3. QC processing and filtering. 
 
-To assess the quality of the data we assess the library sizes, numbers of genes expressed and mitochondrial content per cell. It has been poisted that cells which have very high library sizes or relative to other cells in the data may represent doublet cells. However, in our experiments we have very low cell numbers, and thus the probabiilty of finding doublets is not very high in a droplet based sequencing experiment. In addition, we benchmarked our pipeline to find out how many DEGs overlap with known EPO signatures from the wider literature and fine higher consistency when we do not set an upper limit on library sizes.
+To assess the quality of the data we assess the library sizes, numbers of genes expressed and mitochondrial content per cell. It has been posited that cells which have very high library sizes or relative to other cells in the data may represent doublet cells. However, in our experiments we have very low cell numbers, and thus the probability of finding doublets is not very high in a droplet based sequencing experiment. In addition, we benchmarked our pipeline to find out how many DEGs overlap with known EPO signatures from the wider literature and find higher consistency when we do not set an upper limit on library sizes.
 
-Cells with very low library sizes are typically because of poor capture quality pontentially due to cell death, premature rupture, or capture of random mRNA escaping from cells, consequently cells with low library sizes are also filtered out from downstream analyses. 
+Cells with very low library sizes are typically because of poor capture quality pontentially due to cell death, premature rupture, or capture of random mRNA escaping from cells, consequently cells with low library sizes are filtered out from downstream analyses. 
 
 Another important QC metric is mitochondrial content. As discussed in AlJanahi et al (2018) "High numbers of mitochondrial transcripts are indicators of cell stress, and therefore cells with elevated mitochondrial gene expression are often not included in the analysis, because most experiments will not benefit from clustering cells based on stress levels." In our system we know that upon exiting quiescence HSCs increase their mitochondrial mass to cope with increased metabolic demands. Consequently, we expect quite large spread of mitochondrial content in SLAM+ HSCs and only remove very extreme values. 
 
@@ -170,7 +170,7 @@ When analyzing sequencing data, normalization to eliminate condition effects is 
 
 An additional consideration is that droplet-based sequencing in addition consists of thousands of individual cell experiments, hence cell-specific biases must also be considered when normalizing, in order to be able to compare the expression of one cell to another.  A notable cell-specific bias is caused by mRNA capture efficiency, where the mRNA molecules are not captured by the bead at the same proportion in all droplets. As individual cells are not all of the same type a key consideration is how to retain cell to cell variability while eliminating technical noise. 
 
-To normalise our data we use the default approach in seurat and also sctransform. In the default approach feature counts for each cell are divided by the total counts for that cell and multiplied by the scale.factor. This is then natural-log transformed using log1p.In the scTransform approach you take the Pearson residuals from ’regularized negative binomial regression’, where cellular sequencing depth is utilized as a covariate in a generalized linear model, to remove the influence of technical characteristics from downstream analyses while preserving biological heterogeneity. In their preprint
+To normalise our data we use the default approaches in seurat and sctransform. In the default approach, feature counts for each cell are divided by the total counts for that cell and multiplied by the scale.factor. This is then natural-log transformed using log1p.In the scTransform approach you take the Pearson residuals from ’regularized negative binomial regression’, where cellular sequencing depth is utilized as a covariate in a generalized linear model, to remove the influence of technical characteristics from downstream analyses while preserving biological heterogeneity. In their preprint
 they show that an unconstrained negative binomial model may overfit scRNA-seq data, and overcome this by pooling information across genes with similar abundances to obtain stable parameter estimates.
 
 In our benchmarking we find higher consistency between DEGs and published EPO signatures when applying the default normalisation approach and so use this normalisation method for downstream analyses. We also run some PCA based plots to visualise the effect that each normalisation procedure is having on the data. 
@@ -233,7 +233,7 @@ DimPlot(object = SlamHSCs, label = F,reduction = "umap", pt.size = 2,group.by = 
 
 In this part of the analysis we perform unsupervised clustering using Seurats graph based approach. 
 
-Briefly, this approach involves embedding cells in a graph structure such as a K-nearest neighbour graph, with edges drawn between cells with similar feature expression patterns, and then attempts to partition this graph into a number of highly interconnected subepostatus. As LSK cells do not form discrete clusters, but rather show a smooth continuum of expression, our clustering results were highly sensitive to the resolution parameter of Seurats clustering algorithm. Prior to fixing a value of this parameter we determine how sensitive our clustering is to changes in resolution as this will better enable us to interpret clustering based results. 
+Briefly, this approach involves embedding cells in a graph structure such as a K-nearest neighbour graph, with edges drawn between cells with similar feature expression patterns, and then attempts to partition this graph into a number of highly interconnected communities. As LSK cells do not form discrete clusters, but rather show a smooth continuum of expression, our clustering results were highly sensitive to the resolution parameter of Seurat's clustering algorithm. Prior to fixing a value for this parameter we determine how sensitive our clustering is to changes in resolution as this will better enable us to interpret clustering-based results. 
 
 
 ```{r Clustering, eval = TRUE, message = FALSE, warning = FALSE}
@@ -289,7 +289,7 @@ Compare Ctrl vs EPO using DEG approach.
 
 To understand between key differences between our clusters, we perform a differential expression analysis. It is important to note that different approaches for differential expression analysis of single cells rely on different assumptions about that data, and consequently can give very different results. In this analysis we use a logistic regression approach. 
 
-In the approach below we employ a logistic regression framework to determine differentially expressed genes. Specifically, we construct a logistic regression model predicting group membership based on each feature individually and compares this to a null model with a likelihood ratio test. This approach is advantageous for the analysis of HSPCs which have an expression profile that is distinct from mature cell subsets. Typically, expression profiles are bimodal, and changes in the magnitude of expression are subtle. In other datasets we have noted that cells have similar expression magnitudes but that different proportions of cells are positive for a given gene, within a given group. Given these unique features of our data, we posit that logistic regression is well suited to performing differential expression analysis of our data.
+In the approach below we employ a logistic regression framework to determine differentially expressed genes. Specifically, we construct a logistic regression model predicting group membership based on each feature individually and compare this to a null model with a likelihood ratio test. This approach is advantageous for the analysis of HSPCs which have an expression profile that is distinct from mature cell subsets. Typically, expression profiles are bimodal, and changes in the magnitude of expression are subtle. In other datasets we have noted that cells have similar expression magnitudes but that different proportions of cells are positive for a given gene, within a given group. Given these unique features of our data, we posit that logistic regression is well suited to performing differential expression analysis of our data.
 
 
 
@@ -341,7 +341,7 @@ EPO.sig.filtered <- markers[markers$p_val_adj < 0.05 & markers$avg_logFC > 0,]
 SlamHSCs <- AddModuleScore(SlamHSCs, features = list(rownames(EPO.sig.filtered)),name = "EPO")
 FeaturePlot(SlamHSCs, features = "EPO1", min.cutoff = "q3", max.cutoff = "q97", pt.size = 2, cols = c("lightgrey","red"))
 
-#cassign a threhsold for the expressin of our composite score and call all cells above this threshold EPOresponsive
+#assign a threhsold for the expression of our composite score and call all cells above this threshold EPOresponsive
 SlamHSCs@meta.data$eporesponder <- SlamHSCs@meta.data$EPO1 > quantile(SlamHSCs@meta.data$EPO1 ,c(0.9))
 SlamHSCs@meta.data$epostatus <- SlamHSCs@meta.data$condition
 levels(SlamHSCs@meta.data$epostatus) <- c(levels(SlamHSCs@meta.data$condition), "EPO_responsive", "EPO_nonresponsive")
