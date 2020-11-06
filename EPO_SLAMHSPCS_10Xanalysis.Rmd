@@ -342,27 +342,6 @@ Based on our differentially expressed genes, are all genes in the EPO group driv
 ```{r findResponders, eval = T}
 
 
-generate_EPOResponseSignature <- function(SlamHSCs,markers){
-  
-  markers <- FindAllMarkers(SlamHSCs, verbose = F,
-                            test.use="LR",logfc.threshold = 0.05,
-                            only.pos=T,return.thresh = 0.05)
-  
-  
-  #filter the signature to take only genes that are significantly enriched in the EPO treated group
-  EPO.sig.filtered.up <- markers[markers$cluster == "EPO_treated" & markers$p_val_adj < 0.05,]
-  EPO.sig.filtered.down <- markers[markers$cluster =="Control" & markers$p_val_adj < 0.05,]
-  
-  
-  #create a composite score for all of these genes and overlay expression onto our UMAP visualisation
-  SlamHSCs <- AddModuleScore(SlamHSCs, features = list(rownames(EPO.sig.filtered.up)),name = "EPOup")
-  SlamHSCs <- AddModuleScore(SlamHSCs, features = list(rownames(EPO.sig.filtered.down)),name = "EPOdown")
-  
-  SlamHSCs@meta.data$EPOnet <-SlamHSCs@meta.data$EPOup1 - SlamHSCs@meta.data$EPOdown1 
-  return(SlamHSCs)
-  
-}
-
 
 
 
@@ -384,7 +363,7 @@ DimPlot(EPO, group.by = "eporesponder", pt.size = 2, cols = c("lightpink","red")
 Idents(SlamHSCs) <- SlamHSCs@meta.data$epostatus
 
 
-markers <-  FindAllMarkers(SlamHSCs,only.pos = TRUE,test.use = "LR",return.thresh = 0.05,logfc.threshold = 0.1)#LR and 
+markers <-  FindAllMarkers(SlamHSCs,only.pos = TRUE,test.use = "LR",return.thresh = 0.05,logfc.threshold = 0.05)
 x <-markers %>% group_by(cluster) %>% top_n(10, avg_logFC)
 print(tbl_df(x), n=40)
 DoHeatmap(SlamHSCs, features = x$gene,disp.min = -1.5,disp.max = 1.5,label =F)

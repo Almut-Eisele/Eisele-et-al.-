@@ -214,6 +214,27 @@ setEPOStatus <- function(SlamHSCs, threshold = 0.9){
 
 
 
+generate_EPOResponseSignature <- function(SlamHSCs,markers){
+  
+  markers <- FindAllMarkers(SlamHSCs, verbose = F,
+                            test.use="LR",logfc.threshold = 0.05,
+                            only.pos=T,return.thresh = 0.05)
+  
+  
+  #filter the signature to take only genes that are significantly enriched in the EPO treated group
+  EPO.sig.filtered.up <- markers[markers$cluster == "EPO_treated" & markers$p_val_adj < 0.05,]
+  EPO.sig.filtered.down <- markers[markers$cluster =="Control" & markers$p_val_adj < 0.05,]
+  
+  
+  #create a composite score for all of these genes and overlay expression onto our UMAP visualisation
+  SlamHSCs <- AddModuleScore(SlamHSCs, features = list(rownames(EPO.sig.filtered.up)),name = "EPOup")
+  SlamHSCs <- AddModuleScore(SlamHSCs, features = list(rownames(EPO.sig.filtered.down)),name = "EPOdown")
+  
+  SlamHSCs@meta.data$EPOnet <-SlamHSCs@meta.data$EPOup1 - SlamHSCs@meta.data$EPOdown1 
+  return(SlamHSCs)
+  
+}
+
 
 
 nearestNeighbourMapping <- function(referenceDataset,queryDataset,plotColor = "purple"){
